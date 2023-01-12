@@ -396,6 +396,6 @@ ggplot(lm_education_estimates, aes(x=category, y=estimate, color=model, shape=mo
   geom_errorbar(aes(ymin=conf.low, ymax=conf.high), position=position_dodge(0.5), width=0.2) +
   scale_color_brewer(palette="Set1") +
   labs(x="Education", y=expression(hat(beta))) +
-  theme_classic()
+  theme_bw()
 
 ggsave(file="lm_model_comparison_figure.pdf", width=10, height=8)
