@@ -3,10 +3,13 @@
 
 # Here is an outline of what we hope to accomplish with this code.
 # 1. Read in the NHANES data from the NHANES package and do some data cleaning.
+#
 # 2. Fit some linear regression models to look at the association between systolic blood pressure and educational attainment, 
 # adjusting for age category, gender, and racialized group.
+#
 # 3. Fit some logistic regression models to look at the association between odds of being a current smoker and educational attainment,
 # adjusting for age category, gender, and racialized group.
+#
 # 4. Make some pretty tables to summarize the results.
 
 # Install dependencies ----------------------------------------------------
@@ -18,7 +21,7 @@ library(broom)
 library(gtsummary)
 
 
-# prepare data ------------------------------------------------------------
+# Prepare data ------------------------------------------------------------
 
 
 df <- NHANES  %>%  
@@ -38,7 +41,8 @@ df <- NHANES  %>%
       Race3 == "Black" ~ "Black Non-Hispanic",
       Race3 == "White" ~ "White Non-Hispanic"), 
       levels = c("White Non-Hispanic", "Black Non-Hispanic", "Hispanic", "Other Non-Hispanic"))
-  )
+  ) %>%
+  select(ID, SurveyYr, Gender, agecat, Education, racecat, BPSysAve, SmokeNow)
 
 
 # Linear Regression Model stuff -------------------------------------------
@@ -365,3 +369,33 @@ tbl_merge_ex1 %>%
 #   as_gt() %>%
 #   gt::gtsave(filename = ".") # use extensions .html .tex .ltx .rtf
 
+
+
+
+
+# Comparing models visually -----------------------------------------------
+
+# We want to compare estimates of the education effect in the crude and adjusted models
+
+# Extract the education effects from each model and combine in a tibble
+lm_education_estimates <- bind_rows(broom::tidy(lm_model1, conf.int=TRUE) %>% 
+                                      mutate(model = "Model 1"),
+                                    broom::tidy(lm_model2, conf.int=TRUE) %>%
+                                      mutate(model = "Model 2"),
+                                    broom::tidy(lm_model3, conf.int=TRUE) %>% 
+                                      mutate(model = "Model 3"),
+                                    broom::tidy(lm_model4b, conf.int=TRUE) %>%
+                                      mutate(model = "Model 4")) %>%
+  filter(stringr::str_detect(term, "Education")) %>%
+  separate(col=term, sep=17, into=c("term", "category"), convert=TRUE)
+
+
+# Use ggplot to plot the point estimates and 95% CIs
+ggplot(lm_education_estimates, aes(x=category, y=estimate, color=model, shape=model)) +
+  geom_point(position=position_dodge(0.5), size=3) +
+  geom_errorbar(aes(ymin=conf.low, ymax=conf.high), position=position_dodge(0.5), width=0.2) +
+  scale_color_brewer(palette="Set1") +
+  labs(x="Education", y=expression(hat(beta))) +
+  theme_classic()
+
+ggsave(file="lm_model_comparison_figure.pdf", width=10, height=8)
