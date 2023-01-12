@@ -1,14 +1,21 @@
-
+# Author: Jarvis
+# Date: 2023-01-12
+#
 # Outline and pseudo-code -------------------------------------------------
-
-# Here is an outline of what we hope to accomplish with this code.
+#
+# Here is an outline of what we hope to accomplish with this code. 
 # 1. Read in the NHANES data from the NHANES package and do some data cleaning.
+# Note: we should restrict to age 25 and above
 #
-# 2. Fit some linear regression models to look at the association between systolic blood pressure and educational attainment, 
-# adjusting for age category, gender, and racialized group.
+# We found out (12 Jan) that we need to use Race1 variable!
 #
-# 3. Fit some logistic regression models to look at the association between odds of being a current smoker and educational attainment,
-# adjusting for age category, gender, and racialized group.
+# 2. Fit some linear regression models to look at the association between
+# systolic blood pressure and educational attainment, adjusting for age
+# category, gender, and racialized group.
+#
+# 3. Fit some logistic regression models to look at the association between odds
+# of being a current smoker and educational attainment, adjusting for age
+# category, gender, and racialized group.
 #
 # 4. Make some pretty tables to summarize the results.
 
@@ -16,7 +23,6 @@
 library(tidyverse)
 library(here)
 library(NHANES)
-library(ID529data)
 library(broom)
 library(gtsummary)
 
@@ -25,23 +31,29 @@ library(gtsummary)
 
 
 df <- NHANES  %>%  
+  # Remember that we have to restrict to people 25 and above
   filter(Age>=25)  %>% 
+  # recoding of the variables we're going to use
   mutate(agecat = case_when(
       Age < 35 ~ "25-34",
-      35 <= Age & Age < 44 ~ "35-44",
+      35 <= Age & Age < 45~ "35-44",
       Age >= 45 & Age < 55 ~ "45-54",
       Age >= 55 & Age < 65 ~ "55-64",
-      Age >= 65 & Age < 74 ~ "65-74",
+      Age >= 65 & Age < 75 ~ "65-74",
       Age >= 75 ~ "75+"),
+    # We want College Grad to be the reference category for education, so we'll
+    # re-order the factor so that it is reversed from the way it came in the NHANES dataset
     Education = factor(Education, 
                        levels=rev(levels(NHANES$Education))),
+    # Here we collapse Hispanic and Mexican into the Hispanic category
     racecat = factor(case_when(
-      Race3 %in% c("Hispanic", "Mexican") ~ "Hispanic",
-      Race3 %in% c("Asian", "Other") ~ "Other Non-Hispanic",
-      Race3 == "Black" ~ "Black Non-Hispanic",
-      Race3 == "White" ~ "White Non-Hispanic"), 
+      Race1 %in% c("Hispanic", "Mexican") ~ "Hispanic",
+      Race1 %in% c("Asian", "Other") ~ "Other Non-Hispanic",
+      Race1 == "Black" ~ "Black Non-Hispanic",
+      Race1 == "White" ~ "White Non-Hispanic"), 
       levels = c("White Non-Hispanic", "Black Non-Hispanic", "Hispanic", "Other Non-Hispanic"))
   ) %>%
+  # select just variables we are going to use in the analysis
   select(ID, SurveyYr, Gender, agecat, Education, racecat, BPSysAve, SmokeNow)
 
 
@@ -54,6 +66,8 @@ lm_model1 <- lm(BPSysAve ~ factor(Education),
 
 
 # How can we see what the model fit?
+# These are all standard "methods" for extracting different kinds of information
+# from the lm model object
 
 print(lm_model1)
 
@@ -63,8 +77,16 @@ anova(lm_model1)
 
 # How do we know what is contained in the lm_model1 object?
 class(lm_model1)
+# It's an object of class "lm", but it's also a list in that it has
+# various elements of different types and different lengths
+
+# We can see the names of the elements in the list
 names(lm_model1)
+
+# Note that we can also see the names of the elements in the list
+# produced by running summary() on the model object
 names(summary(lm_model1))
+
 
 # Note the difference between the list item called coefficients
 # in the lm_model1 object and
@@ -86,16 +108,22 @@ cbind(coef(lm_model1), confint(lm_model1))
 
 f_get_coefficients <- function(model){
   
+  # grab the names of the effects in the model
   get_names <- names(coef(model))
   
+  # grab the coefficients and the 95% confidence limits
+  # and put them in a matrix
   estimates_and_cis <- cbind(coef(model), confint(model))
   
+  # put everything into a tibble and return it
   return(tibble(term = get_names, 
          estimate = estimates_and_cis[,1],
          lci = estimates_and_cis[,2],
          uci = estimates_and_cis[,3]))
 }
 
+# now we can invoke the function and run it
+# on the lm_model1 object
 f_get_coefficients(lm_model1)
 
 # We could write this to a csv file
@@ -371,6 +399,12 @@ tbl_merge_ex1 %>%
 
 
 
+# Plotting models ---------------------------------------------------------
+
+# We can use plot_model from the sjPlot package to plot the results of one model.
+library(sjPlot)
+plot_model(lm_model3)
+ggsave(file="lm_model3_figure.png")
 
 
 # Comparing models visually -----------------------------------------------
@@ -399,3 +433,5 @@ ggplot(lm_education_estimates, aes(x=category, y=estimate, color=model, shape=mo
   theme_bw()
 
 ggsave(file="lm_model_comparison_figure.pdf", width=10, height=8)
+
+
