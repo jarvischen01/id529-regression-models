@@ -40,7 +40,7 @@ df <- NHANES  %>%
   # recoding of the variables we're going to use
   mutate(agecat = case_when(
       Age < 35 ~ "25-34",
-      35 <= Age & Age < 45~ "35-44",
+      35 <= Age & Age < 45 ~ "35-44",
       Age >= 45 & Age < 55 ~ "45-54",
       Age >= 55 & Age < 65 ~ "55-64",
       Age >= 65 & Age < 75 ~ "65-74",
