@@ -6,8 +6,7 @@
 # Here is an outline of what we hope to accomplish with this code. 
 # 1. Read in the NHANES data from the NHANES package and do some data cleaning.
 # Note: we should restrict to age 25 and above
-#
-# We found out (12 Jan) that we need to use Race1 variable!
+# Note: We found out (12 Jan) that we need to use Race1 variable!
 #
 # 2. Fit some linear regression models to look at the association between
 # systolic blood pressure and educational attainment, adjusting for age
@@ -18,6 +17,8 @@
 # category, gender, and racialized group.
 #
 # 4. Make some pretty tables to summarize the results.
+#
+# 5. Make some pretty figures to visualize the results.
 
 # Install dependencies ----------------------------------------------------
 library(tidyverse)
@@ -25,6 +26,9 @@ library(here)
 library(NHANES)
 library(broom)
 library(gtsummary)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
 
 
 # Prepare data ------------------------------------------------------------
@@ -54,7 +58,7 @@ df <- NHANES  %>%
       levels = c("White Non-Hispanic", "Black Non-Hispanic", "Hispanic", "Other Non-Hispanic"))
   ) %>%
   # select just variables we are going to use in the analysis
-  select(ID, SurveyYr, Gender, agecat, Education, racecat, BPSysAve, SmokeNow)
+  select(ID, SurveyYr, Gender, Age, agecat, Education, racecat, BPSysAve, SmokeNow)
 
 
 # Linear Regression Model stuff -------------------------------------------
@@ -162,7 +166,7 @@ lm_model3 <- lm(BPSysAve ~ factor(Education) + factor(agecat) + Gender + factor(
               data=df)
 broom::tidy(lm_model3)
 
-# We cab compare two nested models using the anova() function
+# We can compare two nested models using the anova() function
 anova(lm_model3, lm_model1)
 
 # oh no! we have different numbers of observations due to missing data
@@ -315,15 +319,14 @@ broom::augment(logistic_model4, newdata=data_to_predict, type.predict="response"
 
 
 
-# pretty output -----------------------------------------------------------
+# Creating Pretty Tables -----------------------------------------------------------
 
 # We can use functions in the gtsummary package to get pretty output
-
 tbl_regression(lm_model1) %>%
   bold_labels()
 
 # I don't like that the table had factor(Education), so I can modify this
-
+# using the label= argument
 tbl_lm_model1 <- 
   tbl_regression(lm_model1, label = list('factor(Education)' ~ 'Education')) %>%
   bold_labels() 
@@ -333,13 +336,19 @@ tbl_lm_model1
 tbl_lm_model1 %>%
   as_hux_table()
 
-
-
   
 # What if I want to compare my models
 
+# We can set the gtsummary theme so that the table is formatted
+# e.g. here we format to the JAMA journal format
 set_gtsummary_theme(theme_gtsummary_journal("jama"))
 
+# First we format each of the models using tbl_regression
+
+# Note for this first one that I am showing how to integrate this
+# into a workflow where you start with the analytic data frame,
+# pipe it into lm() and then pipe the results into
+# tbl_regression
 tbl_lm_model1 <- df_completecase %>%
   lm(BPSysAve ~ factor(Education), 
      data=.) %>%
@@ -365,13 +374,16 @@ tbl_lm_model4 <- lm_model4b %>%
                  )
 
 
-
+# Now that each of the models has been formatted, I can use tbl_merge to
+# put the models together to be shown side-by-side
 tbl_merge_ex1 <-
   tbl_merge(
     tbls = list(tbl_lm_model1,
                 tbl_lm_model2,
                 tbl_lm_model3,
                 tbl_lm_model4),
+    # the tab_spanner argument specifies the headings at the top of the table
+    # that span multiple columns
     tab_spanner = c("**Model 1**", "**Model 2**", "**Model 3**", "**Model 4**")
   )
 
@@ -390,7 +402,7 @@ tbl_merge_ex1 %>%
   as_hux_xlsx(file="lm_models.xlsx")
 
 
-# Other options:
+# Other options for saving the output:
 # {gtsummary} tables can also be saved directly to file as an image, RTF, LaTeX, and Word file.
 # 
 # tbl %>%
@@ -399,17 +411,72 @@ tbl_merge_ex1 %>%
 
 
 
+
 # Plotting models ---------------------------------------------------------
 
 # We can use plot_model from the sjPlot package to plot the results of one model.
+# This plots a forest-type plot
 library(sjPlot)
 plot_model(lm_model3)
+
+# it may be helpful to plot a line to indicate the null value of beta=0
+plot_model(lm_model3, vline.color="red")
+
+# Perhaps we want to suppress plotting the age terms so that we can
+# focus on interpreting the educational, gender, and racialized disparities
+plot_model(lm_model3, 
+           vline.color="red",
+           terms = c("factor(Education)Some College",
+                     "factor(Education)High School",
+                     "factor(Education)9 - 11th Grade",
+                     "factor(Education)8th Grade",
+                     "Gendermale",
+                     "factor(racecat)Black Non-Hispanic",
+                     "factor(racecat)Hispanic",
+                     "factor(racecat)Other Non-Hispanic"))
+
+
+# We can also add value labels and a title
+plot_model(lm_model3, 
+           show.values=TRUE, value.offset=0.3,
+           title="Associations with Average Systolic Blood Pressure (adjusted for age)",
+           vline.color="red",
+           terms = c("factor(Education)Some College",
+                     "factor(Education)High School",
+                     "factor(Education)9 - 11th Grade",
+                     "factor(Education)8th Grade",
+                     "Gendermale",
+                     "factor(racecat)Black Non-Hispanic",
+                     "factor(racecat)Hispanic",
+                     "factor(racecat)Other Non-Hispanic"))
+
+# When we're satisfied with the way the plot looks, we can ggsave
 ggsave(file="lm_model3_figure.png")
+
+
+# Pretty tabular output using sjPlot ----------------------------------------------
+
+# The sjPlot package also supports outputting summary tables of regression model output
+# Note: HTML is the only output format
+
+tab_model(lm_model3)
+
+# tab_model can also print multiple models at once, which are printed side by side.
+tab_model(lm_model2, lm_model3)
+
+# Note that for generalized linear models,  instead of Estimates
+# the column is labeled Odds Ratios (for logistic regression)
+tab_model(logistic_model2, logistic_model3)
+
 
 
 # Comparing models visually -----------------------------------------------
 
 # We want to compare estimates of the education effect in the crude and adjusted models
+# Here, I show an example of using broom::tidy to extract the model estimates,
+# stacking them together in a tibble,
+# filtering out just the education terms,
+# and piping the tibble into ggplot in order to plot the estimates.
 
 # Extract the education effects from each model and combine in a tibble
 lm_education_estimates <- bind_rows(broom::tidy(lm_model1, conf.int=TRUE) %>% 
@@ -420,17 +487,26 @@ lm_education_estimates <- bind_rows(broom::tidy(lm_model1, conf.int=TRUE) %>%
                                       mutate(model = "Model 3"),
                                     broom::tidy(lm_model4b, conf.int=TRUE) %>%
                                       mutate(model = "Model 4")) %>%
+  # here, we use stringr::str_detect to detect the entries
+  # where term includes the string 'Education'
   filter(stringr::str_detect(term, "Education")) %>%
+  # here, we use the separate() function to pull out the category labels
+  # from term so that we can have nice labeling in the plot
   separate(col=term, sep=17, into=c("term", "category"), convert=TRUE)
 
 
 # Use ggplot to plot the point estimates and 95% CIs
+# Note that we are differentiating the models by color AND by the shape of the plotting symbol
 ggplot(lm_education_estimates, aes(x=category, y=estimate, color=model, shape=model)) +
-  geom_point(position=position_dodge(0.5), size=3) +
-  geom_errorbar(aes(ymin=conf.low, ymax=conf.high), position=position_dodge(0.5), width=0.2) +
-  scale_color_brewer(palette="Set1") +
-  labs(x="Education", y=expression(hat(beta))) +
-  theme_bw()
+  # position=position_dodge() is specified so that the estimates are side by side rather than
+  # plotted on top of one another
+    geom_point(position=position_dodge(0.5), size=3) +
+  # geom_errorbar allows us to plot the 95% confidence limits
+    geom_errorbar(aes(ymin=conf.low, ymax=conf.high), position=position_dodge(0.5), width=0.2) +
+  # scale_color_brewer allows me to control the colors for plotting the different models
+    scale_color_brewer(palette="Set1") +
+    labs(x="Education", y=expression(hat(beta))) +
+    theme_bw()
 
 ggsave(file="lm_model_comparison_figure.pdf", width=10, height=8)
 
