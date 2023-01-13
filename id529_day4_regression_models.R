@@ -224,7 +224,11 @@ head(predict(lm_model4b,
 
 # We could also predict for a set of new observations
 # The new dataset to predict needs to contain values for all of
-# the covariates that were included in the original model
+# the covariates that were included in the original model.
+# Here, we predict average systolic blood pressure
+# for five women age 45-54 who are Black Non-Hispanic
+# at each of the education levels.
+
 data_to_predict <- data.frame(Education = c("8th Grade", "9 - 11th Grade", "High School", "Some College", "College Grad"),
                       Gender = rep("female",5),
                       agecat = rep("45-54", 5),
@@ -308,6 +312,8 @@ anova(logistic_model4, logistic_model1, test="LRT")
 
 
 # predict on the logit scale vs. the response scale
+# Here, we predict for Black Non-Hispanic women and White Non-Hispanic women age 45-54
+# at each of the educational levels.
 data_to_predict <- data.frame(Education = rep(c("8th Grade", "9 - 11th Grade", "High School", "Some College", "College Grad"), 2),
                               Gender = rep("female",10),
                               agecat = rep("45-54", 10),
