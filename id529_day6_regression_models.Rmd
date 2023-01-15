@@ -1,0 +1,310 @@
+---
+title: 'ID529: Modeling workflows, The RMarkdown Version'
+author: "Jarvis Chen"
+date: "2023-01-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Install dependencies ----------------------------------------------------
+library(tidyverse)
+library(here)
+library(NHANES)
+library(broom)
+library(gtsummary)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(gt)
+library(stargazer)
+library(ggstatsplot)
+library(kableExtra)
+library(knitr)
+```
+
+Here, we illustrate how the `gtsummary`, `sjPlot`, `stargazer`, and `ggstatsplot` packages can be used in an RMarkdown document to generate pretty tables and figures. We show a few more options for adjusting things like table captions to make your tables and figures more informative.
+
+This example uses the NHANES dataset and the linear and logistic regression models that we looked at on Day 4.
+
+# Setting up the data and fitting linear and logistic regression models to use as examples
+
+```{r}
+
+# Set up the analytic dataset
+df <- NHANES  %>%  
+  # Remember that we have to restrict to people 25 and above
+  filter(Age>=25)  %>% 
+  # recoding of the variables we're going to use
+  mutate(agecat = case_when(
+      Age < 35 ~ "25-34",
+      35 <= Age & Age < 45 ~ "35-44",
+      Age >= 45 & Age < 55 ~ "45-54",
+      Age >= 55 & Age < 65 ~ "55-64",
+      Age >= 65 & Age < 75 ~ "65-74",
+      Age >= 75 ~ "75+"),
+    # We want College Grad to be the reference category for education, so we'll
+    # re-order the factor so that it is reversed from the way it came in the NHANES dataset
+    Education = factor(Education, 
+                       levels=rev(levels(NHANES$Education))),
+    # Here we collapse Hispanic and Mexican into the Hispanic category
+    racecat = factor(case_when(
+      Race1 %in% c("Hispanic", "Mexican") ~ "Hispanic",
+      Race1 %in% c("Asian", "Other") ~ "Other Non-Hispanic",
+      Race1 == "Black" ~ "Black Non-Hispanic",
+      Race1 == "White" ~ "White Non-Hispanic"), 
+      levels = c("White Non-Hispanic", "Black Non-Hispanic", "Hispanic", "Other Non-Hispanic"))
+  ) %>%
+  # select just variables we are going to use in the analysis
+  select(ID, SurveyYr, Gender, Age, agecat, Education, racecat, BPSysAve, SmokeNow)
+
+
+# Knowing that there are differing amounts of missing data in the different variables,
+# it would be better if we defined our analytic dataset based non-missing data on all of 
+# variables we know we are going to include in our analysis.
+# NOTE: There is a substantial amount of missing data, so complete case analysis could
+# yield biased results if the data are not Missing Completely At Random!
+
+df_completecase <- df %>%
+  filter(!is.na(BPSysAve) & !is.na(agecat) & !is.na(Gender) & !is.na(racecat))
+```
+
+
+
+
+```{r}
+# Fit the linear regression models of interest
+# relating BPSysAve to Education, and adjusting
+# for covariates: age category, gender, race category, and the interaction
+# of race and gender
+
+lm_model1 <- lm(BPSysAve ~ factor(Education), 
+                data=df_completecase)
+lm_model2 <- lm(BPSysAve ~ factor(Education) + factor(agecat) + Gender, 
+                data=df_completecase)
+lm_model3 <- lm(BPSysAve ~ factor(Education) + factor(agecat) + Gender + factor(racecat), 
+                data=df_completecase)
+
+lm_model4 <- lm(BPSysAve ~ factor(Education) + factor(agecat) + interaction(Gender,factor(racecat)), 
+                 data=df_completecase)
+
+# Fit the logistic regression models of interest
+# relating the same covariates to SmokeNow
+
+logistic_model1 <- glm(SmokeNow ~ factor(Education), 
+              family=binomial(link=logit),
+              data=df_completecase)
+
+logistic_model2 <- glm(SmokeNow ~ factor(Education) + factor(agecat) + Gender, 
+              family=binomial(link=logit),
+              data=df_completecase)
+
+logistic_model3 <- glm(SmokeNow ~ factor(Education) + factor(agecat) + Gender + factor(racecat), 
+              family=binomial(link=logit),
+              data=df_completecase)
+
+logistic_model4 <- glm(SmokeNow ~ factor(Education) + factor(agecat) + interaction(Gender,factor(racecat)), 
+               family=binomial(link=logit),
+               data=df_completecase)
+
+```
+
+Note that if you simply call `broom::tidy` and use the default chunk options in RMarkdown, the results of calling `broom::tidy` will appear in your knitted output.
+
+```{r}
+broom::tidy(lm_model4)
+```
+
+# Summary tables using `gtsummary`
+
+We can integrate calls to `gtsummary::tbl_regression` into our RMarkdown document and get pretty tables to appear in our knitted document.
+
+```{r}
+# Creating Pretty Tables -----------------------------------------------------------
+
+tbl_lm_model1 <- 
+  tbl_regression(lm_model1, label = list('factor(Education)' ~ 'Education')) %>%
+  bold_labels() %>%
+    modify_caption("**Table 1:** Model 1 estimates showing crude associations of educational categories with average systolic blood pressure")
+
+# We can also add some model fit statistics to the output
+# by using add_glance_table()
+tbl_lm_model1_glance <- 
+  tbl_regression(lm_model1, label = list('factor(Education)' ~ 'Education')) %>%
+  bold_labels() %>% 
+  add_glance_table() %>%
+  modify_caption("**Table 1:** Model 1 estimates showing crude associations of educational categories with average systolic blood pressure")
+tbl_lm_model1_glance
+
+
+
+# What if I want to compare my models
+
+# We can set the gtsummary theme so that the table is formatted
+# e.g. here we format to the JAMA journal format
+set_gtsummary_theme(theme_gtsummary_journal("jama"))
+
+# First we format each of the models using tbl_regression
+
+# Note for this first one that I am showing how to integrate this
+# into a workflow where you start with the analytic data frame,
+# pipe it into lm() and then pipe the results into
+# tbl_regression
+tbl_lm_model1 <- df_completecase %>%
+  lm(BPSysAve ~ factor(Education), 
+     data=.) %>%
+  tbl_regression(intercept=TRUE,
+                 label = list('factor(Education)' ~ 'Education'))
+
+tbl_lm_model2 <- lm_model2 %>% 
+  tbl_regression(intercept=TRUE,
+                 label = list('factor(Education)' ~ 'Education',
+                              'factor(agecat)' ~ 'Age category'))
+
+tbl_lm_model3 <- lm_model3 %>%
+  tbl_regression(intercept=TRUE,
+                 label = list('factor(Education)' ~ 'Education',
+                              'factor(agecat)' ~ 'Age category',
+                              'factor(racecat)' ~ 'Racialized group'))
+
+tbl_lm_model4 <- lm_model4 %>%
+  tbl_regression(intercept=TRUE,
+                 label = list('factor(Education)' ~ 'Education',
+                              'factor(agecat)' ~ 'Age category',
+                              'interaction(Gender, factor(racecat))' ~ 'Gender X Racialized group'),
+                 )
+
+
+# Now that each of the models has been formatted, I can use tbl_merge to
+# put the models together to be shown side-by-side
+tbl_merge_ex1 <-
+  tbl_merge(
+    tbls = list(tbl_lm_model1,
+                tbl_lm_model2,
+                tbl_lm_model3,
+                tbl_lm_model4),
+    # the tab_spanner argument specifies the headings at the top of the table
+    # that span multiple columns
+    tab_spanner = c("**Model 1**", "**Model 2**", "**Model 3**", "**Model 4**")
+  ) %>%
+  modify_caption("Table 2: Comparison of linear model results")
+
+tbl_merge_ex1 
+
+```
+
+# Summary tables using `sjPlot`
+
+`sjPlot::tab_model` also works seamlessly with RMarkdown, although annoyingly it seems complicated to add a table caption (title).
+
+```{r}
+
+# Pretty tabular output using sjPlot ----------------------------------------------
+# tab_model can also print multiple models at once, which are printed side by side.
+tab_model(lm_model2, lm_model3) 
+
+# Note that for generalized linear models,  instead of Estimates
+# the column is labeled Odds Ratios (for logistic regression)
+tab_model(logistic_model2, logistic_model3)
+```
+
+# Table summaries using `stargazer`
+
+The `stargazer` package also can be used to generate pretty tables. Note that we had to specify `results='asis'` in the code chunk (see the Rmd file).
+
+```{r, results='asis'}
+stargazer(lm_model1, lm_model2, lm_model3, lm_model4, 
+          header=FALSE,
+          type='html',
+          title="Table 2: Comparison of models for average systolic blood pressure in relation to education")
+```
+
+# Plotting model results using `sjPlot`
+
+```{r}
+# Plotting models ---------------------------------------------------------
+
+
+# We can also add value labels and a title
+plot_model(lm_model3, 
+           show.values=TRUE, value.offset=0.3,
+           title="Associations with Average Systolic Blood Pressure (adjusted for age)",
+           vline.color="red",
+           terms = c("factor(Education)Some College",
+                     "factor(Education)High School",
+                     "factor(Education)9 - 11th Grade",
+                     "factor(Education)8th Grade",
+                     "Gendermale",
+                     "factor(racecat)Black Non-Hispanic",
+                     "factor(racecat)Hispanic",
+                     "factor(racecat)Other Non-Hispanic"))
+
+```
+
+# Example using `broom::tidy` and `ggplot`
+
+```{r}
+
+# Comparing models visually -----------------------------------------------
+
+# We want to compare estimates of the education effect in the crude and adjusted models
+# Here, I show an example of using broom::tidy to extract the model estimates,
+# stacking them together in a tibble,
+# filtering out just the education terms,
+# and piping the tibble into ggplot in order to plot the estimates.
+
+# Extract the education effects from each model and combine in a tibble
+lm_education_estimates <- bind_rows(broom::tidy(lm_model1, conf.int=TRUE) %>% 
+                                      mutate(model = "Model 1"),
+                                    broom::tidy(lm_model2, conf.int=TRUE) %>%
+                                      mutate(model = "Model 2"),
+                                    broom::tidy(lm_model3, conf.int=TRUE) %>% 
+                                      mutate(model = "Model 3"),
+                                    broom::tidy(lm_model4, conf.int=TRUE) %>%
+                                      mutate(model = "Model 4")) %>%
+  # here, we use stringr::str_detect to detect the entries
+  # where term includes the string 'Education'
+  filter(stringr::str_detect(term, "Education")) %>%
+  # here, we use the separate() function to pull out the category labels
+  # from term so that we can have nice labeling in the plot
+  separate(col=term, sep=17, into=c("term", "category"), convert=TRUE)
+
+
+# Use ggplot to plot the point estimates and 95% CIs
+# Note that we are differentiating the models by color AND by the shape of the plotting symbol
+ggplot(lm_education_estimates, aes(x=category, y=estimate, color=model, shape=model)) +
+  # position=position_dodge() is specified so that the estimates are side by side rather than
+  # plotted on top of one another
+    geom_point(position=position_dodge(0.5), size=3) +
+  # geom_errorbar allows us to plot the 95% confidence limits
+    geom_errorbar(aes(ymin=conf.low, ymax=conf.high), position=position_dodge(0.5), width=0.2) +
+  # scale_color_brewer allows me to control the colors for plotting the different models
+    scale_color_brewer(palette="Set1") +
+    labs(x="Education", y=expression(hat(beta))) +
+    theme_bw()
+
+```
+
+# Plotting using `ggstatsplot`
+
+We can use the `ggcoefstats()` function from the `ggstatsplot` package as well.
+
+A few things to note here:
+
+* `sort='none'` specifies no sorting of the effects so they appear in the order that they are specified in the `lm()` model call. But note that they are being plotted from the bottom of the plot going up (rather than from the top going down as in `sjPlot::plot_model`)
+
+* To make this figure readable, we adjusted the `fig.width` and `fig.height` chunk options (see Rmd), otherwise everything was too squished.
+
+* `stats.labels` gives us these helpful labels with the actual $\hat{\beta}$ estimates. `ggcoefstats` is using the `ggrepel` package so that these labels repel away from each other and from the data points. Additional arguments can be passed to ``ggrepel::geom_label_repel()`` via the `stats.label.args` argument.
+
+```{r, fig.width=8, fig.height=12}
+ggcoefstats(lm_model3,
+            exclude.intercept = TRUE,
+            stats.labels = TRUE,
+            xlab = "Estimate",
+            ylab = "Effect",
+            title = "Model 3: Associations with average systolic blood pressure",
+            sort = "none")
+```
+

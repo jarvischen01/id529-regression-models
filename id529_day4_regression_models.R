@@ -6,7 +6,7 @@
 # Here is an outline of what we hope to accomplish with this code. 
 # 1. Read in the NHANES data from the NHANES package and do some data cleaning.
 # Note: we should restrict to age 25 and above
-# Note: We found out (12 Jan) that we need to use Race1 variable!
+# Note: we'll use the Race1 variable but collapse Hispanic and Mexican into one category.
 #
 # 2. Fit some linear regression models to look at the association between
 # systolic blood pressure and educational attainment, adjusting for age
@@ -337,6 +337,14 @@ tbl_lm_model1 <-
   tbl_regression(lm_model1, label = list('factor(Education)' ~ 'Education')) %>%
   bold_labels() 
 tbl_lm_model1
+
+# Note that we can add model fit statistics
+# using add_glance_table()
+tbl_lm_model1_glance <- 
+  tbl_regression(lm_model1, label = list('factor(Education)' ~ 'Education')) %>%
+  bold_labels() %>% 
+  add_glance_table()
+tbl_lm_model1_glance
 
 # What if I want this printed to my console?
 tbl_lm_model1 %>%
