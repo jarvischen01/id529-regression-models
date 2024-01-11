@@ -1,0 +1,125 @@
+/*-- scss:defaults --*/
+// Header color (all levels)
+$presentation-heading-color: #D883B7 !default;
+
+// Base font size 
+$presentation-font-size-root: 35px !default;
+
+// Code text and background colors
+$code-color: #3F569E !default;
+$code-block-bg: #E0E0E0 !default;
+
+// URL color
+$link-color: #3F569E !default;
+
+/*-- scss:rules --*/
+// Font and object colors 
+.blue-bold {
+  color: #3F569E;
+  font-weight: bold;
+}
+
+.red {
+  color: #F75250;
+}
+
+.orange {
+  color: #D3985B;
+}
+
+.peach {
+  color: #DF9075;
+}
+
+.teal {
+  color: #2A5760;
+}
+
+// Custom font size and color for h1 header on title and section-break slides
+.white-title, .white-title h1 {
+  color: white;
+  font-size: 25px;
+}
+
+// Custom code color
+.white-code, .white-code code {
+  color: white;
+}
+
+// Custom font size and color for title and section-break slides
+.white-15-pt { 
+  font-size: 15pt; 
+  color: white;
+}
+
+.white-12-pt { 
+  font-size: 12pt; 
+  color: white;
+}
+
+// Slide number and font size and color
+.slide-number, .slide-number {
+  color: #3F569E !important;
+  font-size: 20px !important;
+}
+
+// // A narrower line break to use between bulleted sections on slides
+.small-break br {
+  font-size: 20px;
+  line-height: 1.5;
+}
+
+// Custom single-line, two-line, and large boxes for emphasis (apply this rule with a color rule)
+.one-line-box {
+  background-color: transparent;
+  margin: 1px;
+  padding: 5px 2px 5px 2px;
+  height: 33px;
+  border: 4px solid;
+}
+
+.two-line-box {
+  background-color: transparent;
+  margin: 1px;
+  padding: 5px 2px 5px 2px;
+  height: 68px;
+  border: 4px solid;
+}
+
+.large-box {
+  background-color: transparent;
+  margin: 1px;
+  padding: 5px 2px 5px 2px;
+  height: 225px;
+  border: 4px solid;
+}
+
+// Applies tex-align left to all section elements nested underneath other section elements
+.reveal .slides > section > section { 
+  text-align:left; 
+} 
+
+// Clear floats after the columns
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+} 
+
+.column {
+  float: left;
+  width: 50%;
+  display: table;
+}
+
+.cell-output {
+  background-color: #E0E0E0 !important; 
+  font-size: 30px;
+}
+
+.sourceCode {
+  background-color: #E0E0E0; 
+  font-size: 18px;
+}
+
+

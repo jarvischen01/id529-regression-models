@@ -1,0 +1,448 @@
+---
+format: 
+  revealjs:
+    theme: [simple, custom.scss]
+    logo: images/id529-sticker.png
+    echo: true
+    slide-number: true
+    revealjs-plugins:
+      - pointer
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r}
+#| label: load-packages
+#| include: false
+
+library(tidyverse)
+library(here)
+library(NHANES)
+library(broom)
+library(gtsummary)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+
+```
+
+# Regression modeling workflows {.smaller}
+
+ID 529: Data Management and Analytic Workflows in R
+
+Jarvis Chen
+
+<br>
+
+<hr>
+
+<br>
+
+Thursday, January 11, 2024
+
+
+## Follow along {.smaller}
+
+<br>
+<br>
+<center>
+https://bit.ly/id529_regression_models
+<br>
+<br>
+    
+- Clone the repository and open it as a `R` Project in your RStudio.
+
+- Open the `id529\_day4\_regression\_models.R` script. You can follow along, annotate, and/or run the code in your own R session.
+
+##
+![](images/modelbuilding_workflow.png)
+
+##
+![](images/modelbuilding_details.png)
+
+
+## Some goals for today {.smaller}
+
+<br> 
+
+:::incremental
+
+- Practice reading someone else's `R` code and annotating to help you understand what is going on
+
+- Review and consolidate some of the concepts we've been learning about
+
+  - Use a `dplyr` workflow to prepare our dataset for analysis
+  - Write a quick function (using concepts of **functional programming**)
+  - Use `ggplot` to make a figure
+
+
+- Fit some regression models
+
+  - `lm()` for linear regression
+  - `glm()` for generalized linear regression
+  - What arguments do these functions take?
+  - What is contained in the resulting model objects?
+
+:::
+
+## Some goals for today {.smaller} 
+
+::: incremental
+
+- Learn how to extract output of interest from model objects
+
+  - using base `R`
+  - using `broom::tidy`, `broom::augment`, and `broom::glance`
+
+- Learn how to create some pretty tables
+
+  - Learn about the `gtsummary` package
+
+
+::: 
+
+
+## Priority List {.smaller}
+
+<br>
+
+What to prioritize in understanding the code in the example
+
+- <span style="color: purple;">Using `dplyr` code for data cleaning/management </span>
+- <span style="color: purple;">Calling `lm()` and `glm()` </span>
+- <span style="color: purple;">Using `summary()`, `coef()`, `confint()`, and `broom::tidy()` to extract and summarize coefficients. </span>
+
+- <span style="color: #D883B7;">Writing our own function to extract coefficients and output to a tibble </span>
+- <span style="color: #D883B7;">Using `anova` to compare models` </span>
+
+- <span style="color: grey;">Using `predict()` and `broom::augment()` to extract predictions and residuals` </span>
+- <span style="color: grey;">Using `broom::glance` to extract model fit statistics` </span>
+
+:::aside
+We'll talk about using `gtsummary` to generate pretty tables and `ggplot` to visualize regression output tomorrow!
+:::
+
+
+
+## Data preparation {.smaller}
+
+- For this example, we will use the NHANES data from the `NHANES` package. Note that this is **different** from the `nhanes_id529` data in the `ID529data` package. 
+
+```{r}
+df <- NHANES  |>  
+  # Remember that we have to restrict to people 25 and above
+  filter(Age>=25)  |> 
+  # recoding of the variables we're going to use
+  mutate(agecat = case_when(
+      Age < 35 ~ "25-34",
+      35 <= Age & Age < 45 ~ "35-44",
+      Age >= 45 & Age < 55 ~ "45-54",
+      Age >= 55 & Age < 65 ~ "55-64",
+      Age >= 65 & Age < 75 ~ "65-74",
+      Age >= 75 ~ "75+"),
+    # We want College Grad to be the reference category for education, so we'll
+    # re-order the factor so that it is reversed from the way it came in the NHANES dataset
+    Education = factor(Education, 
+                       levels=rev(levels(NHANES$Education))),
+    # Here we collapse Hispanic and Mexican into the Hispanic category
+    racecat = factor(case_when(
+      Race1 %in% c("Hispanic", "Mexican") ~ "Hispanic",
+      Race1 %in% c("Asian", "Other") ~ "Other Non-Hispanic",
+      Race1 == "Black" ~ "Black Non-Hispanic",
+      Race1 == "White" ~ "White Non-Hispanic"), 
+      levels = c("White Non-Hispanic", "Black Non-Hispanic", "Hispanic", "Other Non-Hispanic"))
+  ) |>
+  # select just variables we are going to use in the analysis
+  select(ID, SurveyYr, Gender, Age, agecat, Education, racecat, BPSysAve, SmokeNow)
+```
+
+## A basic call to lm() {.smaller}
+
+- You've probably seen something like this in a basic statistics class
+
+```{r}
+lm_model1 <- lm(BPSysAve ~ factor(Education), 
+              data=df)
+```
+
+- This creates an object called `lm_model1` where we are storing the results of having fit a linear regression model with `BPSysAve` as the dependent variable and categories of `Education` as the independent variables.
+
+- To see the actual results, we have to do something like
+
+```{r}
+print(lm_model1)
+```
+
+## Summarizing the model object {.smaller}
+```{r}
+summary(lm_model1)
+```
+
+## Other ways of summarizing the model {.smaller}
+```{r}
+anova(lm_model1)
+```
+
+
+## Exploring the model object more fully {.smaller}
+
+```{r}
+class(lm_model1)
+```
+
+- It's an object of class "lm", but it's also a list in that it has
+various elements of different types and different lengths
+
+``` {r}
+names(lm_model1)
+```
+
+- Note that `summary(lm_model1)` is **also** a list that has different elements from `lm_model1`!
+```{r}
+names(summary(lm_model1))
+```
+
+
+## Exploring the model object more fully {.smaller}
+
+- Note the difference between the list item called `coefficients` in the `lm_model1` object and the list item called `coefficients` in the `summary(lm_model1)` object
+
+```{r}
+lm_model1$coefficients
+```
+
+```{r}
+summary(lm_model1)$coefficients
+```
+
+
+## Extracting quantities of interest {.smaller}
+
+```{r}
+# point estimates
+coef(lm_model1)
+```
+
+```{r}
+# confidence limits
+confint(lm_model1)
+```
+
+- We might be interested in looking at the coefficients and their 95% CIs together
+```{r}
+cbind(coef(lm_model1), confint(lm_model1))
+```
+
+
+## Do you want to write a function? {.smaller}
+
+- Let's write our own function to extract point estimates and 95% CI from the model object.
+
+```{r}
+f_get_coefficients <- function(model){
+  
+  # grab the names of the effects in the model
+  get_names <- names(coef(model))
+  
+  # grab the coefficients and the 95% confidence limits
+  # and put them in a matrix
+  estimates_and_cis <- cbind(coef(model), confint(model))
+  
+  # put everything into a tibble and return it
+  return(tibble(term = get_names, 
+         estimate = estimates_and_cis[,1],
+         lci = estimates_and_cis[,2],
+         uci = estimates_and_cis[,3]))
+}
+```
+
+```{r}
+f_get_coefficients(lm_model1)
+```
+
+
+## broom::tidy {.smaller}
+
+- The `broom` package has a function called `tidy` that extracts model output and puts it in tibble format
+
+```{r}
+broom::tidy(lm_model1)
+```
+
+- We can add the confidence limits to the tibble using the conf.int=TRUE argument
+```{r}
+broom::tidy(lm_model1, conf.int=TRUE)
+```
+
+:::aside
+Tomorrow, we will build further on `broom::tidy` to create workflows that output regression output to tables.
+::: 
+
+## Subsetting data in calls to lm() {.smaller}
+
+- Many regression functions in `R` allow us to subset or restrict the data to a particular group
+
+```{r}
+lm_model1_female <- lm(BPSysAve ~ factor(Education), 
+                data=df,
+                subset=(Gender=="female"))
+broom::tidy(lm_model1_female)
+```
+
+- We could accomplish something similar by calling
+```{.r .no-exec}
+lm_model1_female <- lm(BPSysAve ~ factor(Education), 
+                data=df |> filter(Gender=="female"))
+```
+
+## Restricting to non-missing observations {.smaller}
+
+- Though most regression functions will automatically drop observations with `NA`, sometimes we may want to explicitly filter out missing observations on any of the covariates we are going to include while model building to make sure that we can compare models based on the same number of observations.
+
+```{r}
+df_completecase <- df |>
+  filter(!is.na(BPSysAve) & !is.na(agecat) & !is.na(Gender) & !is.na(racecat))
+```
+
+## Fitting multiple models {.smaller}
+
+```{r}
+lm_model1 <- lm(BPSysAve ~ factor(
+  Education), 
+                data=df_completecase)
+lm_model2 <- lm(BPSysAve ~ factor(Education) + factor(agecat) + Gender, 
+                data=df_completecase)
+lm_model3 <- lm(BPSysAve ~ factor(Education) + factor(agecat) + Gender + factor(racecat), 
+                data=df_completecase)
+```
+
+## Models with interactions {.smaller}
+
+
+- We also think we should try to fit a model with an interaction between gender and racialized group
+
+```{r}
+lm_model4a <- lm(BPSysAve ~ factor(Education) + factor(agecat) + Gender*factor(racecat), 
+                 data=df_completecase)
+broom::tidy(lm_model4a)
+```
+
+## Models with interactions {.smaller}
+
+<br>
+
+- When we specify the interaction in the formula using `*`
+we get the main effects of Gender and factor(racecat) as well as the interactions
+
+
+## Models with interactions {.smaller}
+
+- Another way to specify the interaction is to use the `interaction()` function to create a categorical variable representing the cross-classified categories
+- Useful when we want to compare to a common referent category.
+
+```{r}
+lm_model4b <- lm(BPSysAve ~ factor(Education) + factor(agecat) + interaction(Gender,factor(racecat)), 
+                 data=df_completecase)
+broom::tidy(lm_model4b)
+```
+
+## Models with interactions {.smaller}
+
+Another way to fit the interaction is with the `/` operator. In this example, it is giving us the racialized group effect WITHIN gender categories
+```{r}
+lm_model4c <- lm(BPSysAve ~ factor(Education) + factor(agecat) + factor(racecat)/Gender, 
+                 data=df_completecase)
+broom::tidy(lm_model4c)
+```
+
+## Predictions {.smaller}
+
+- A common task we might want to do having fit a model is to generate model-based **predictions**
+
+- We can use the predict() function to predict the fitted `BPSysAve` for everyone in the original dataset
+
+```{r}
+# predicting on the original dataset
+head(predict(lm_model4b, 
+        interval = "prediction"))
+```
+
+## Predictions {.smaller}
+
+- We could also predict for a set of new observations
+- The new dataset to predict needs to contain values for all of
+the covariates that were included in the original model.
+- Here, we predict average systolic blood pressure
+for five women age 45-54 who are Black Non-Hispanic at each of the education levels.
+
+```{r}
+data_to_predict <- data.frame(Education = c("8th Grade", 
+                                            "9 - 11th Grade", 
+                                            "High School", 
+                                            "Some College", 
+                                            "College Grad"),
+                      Gender = rep("female",5),
+                      agecat = rep("45-54", 5),
+                      racecat = rep("Black Non-Hispanic", 5))
+
+print(data_to_predict)
+```
+
+## Predictions {.smaller}
+```{r}
+predict(lm_model4b, 
+        newdata=data_to_predict,
+        interval = "confidence")
+```
+      
+## Predictions using broom::augment() {.smaller}
+
+- The `broom` package can also do this for us using the `augment()` function
+```{r}
+broom::augment(lm_model4b, newdata=data_to_predict, interval = "confidence")
+```
+
+Note that both `predict()` and `broom::augment()` can compute **confidence** intervals and **prediction** intervals
+   
+## Model fit statistics {.smaller}
+
+- We can also look at a variety of model fit statistics using `broom::glance()`
+
+```{r}
+bind_rows(broom::glance(lm_model1),
+  broom::glance(lm_model2),
+  broom::glance(lm_model3),
+  broom::glance(lm_model4b)) |>
+  bind_cols(c("Model 1", "Model 2", "Model 3", "Model 4"))
+```
+
+## Comparing models {.smaller}
+
+- You may recall from statistics classes that we can compare two nested linear regression models.
+
+```{r}
+anova(lm_model4b, lm_model3)
+```
+  
+## Some take aways {.smaller}
+
+- Like everything in `R`, when we fit regression models we assign the results to an **object** that we can then manipulate to extract the most relevant pieces of output
+
+- These are essentially **list** objects that contain different elements
+
+- Don't be afraid to poke around and explore what are the elements of the model object.
+
+- We can often write our own **functions** to help us extract the elements we're interested in.
+
+- The `broom` package, by David Robinson, has lots of powerful functions to turn models into tidy data. Once you have tidy data, you can manipulate them using many of the techniques you've been learning for managing dataframes and tibbles.
+
+
+## Further reading {.smaller}
+  
+- Introduction to `broom` https://cran.r-project.org/web/packages/broom/vignettes/broom.html
+
+- `broom.mixed` documentation (useful if you are fitting random effects or mixed models) https://cran.r-project.org/web/packages/broom.mixed/vignettes/broom_mixed_intro.html
+
+
+  
