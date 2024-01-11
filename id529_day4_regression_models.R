@@ -1,5 +1,6 @@
 # Author: Jarvis
 # Date: 2023-01-12
+# Updated: 2024-01-11
 #
 # Outline and pseudo-code -------------------------------------------------
 #
@@ -32,11 +33,11 @@ library(sjlabelled)
 
 
 # Prepare data ------------------------------------------------------------
+# We'll use the NHANES data from the NHANES package.
 
-
-df <- NHANES  %>%  
+df <- NHANES  |>  
   # Remember that we have to restrict to people 25 and above
-  filter(Age>=25)  %>% 
+  filter(Age>=25)  |> 
   # recoding of the variables we're going to use
   mutate(agecat = case_when(
       Age < 35 ~ "25-34",
@@ -56,7 +57,7 @@ df <- NHANES  %>%
       Race1 == "Black" ~ "Black Non-Hispanic",
       Race1 == "White" ~ "White Non-Hispanic"), 
       levels = c("White Non-Hispanic", "Black Non-Hispanic", "Hispanic", "Other Non-Hispanic"))
-  ) %>%
+  ) |>
   # select just variables we are going to use in the analysis
   select(ID, SurveyYr, Gender, Age, agecat, Education, racecat, BPSysAve, SmokeNow)
 
@@ -131,10 +132,13 @@ f_get_coefficients <- function(model){
 f_get_coefficients(lm_model1)
 
 # We could write this to a csv file
-write.csv(f_get_coefficients(lm_model1), file="lm_model1.csv")
+write_csv(f_get_coefficients(lm_model1), file="lm_model1.csv")
+
+
+# broom::tidy -------------------------------------------------------------
 
   
-# the broom package has a function called tidy
+# The broom package has a function called tidy
 # that extracts model output and puts it in tibble format
 
 broom::tidy(lm_model1)
@@ -170,6 +174,8 @@ broom::tidy(lm_model3)
 anova(lm_model3, lm_model1)
 
 # oh no! we have different numbers of observations due to missing data
+# Here, we refit the model restricted to people with non-missing data on 
+# blood pressure, age, gender, and racialized group
 lm_model1_notmissing <- lm(BPSysAve ~ factor(Education), 
                            data=df,
                            subset=(!is.na(BPSysAve) & !is.na(agecat) & !is.na(Gender) & !is.na(racecat)))
@@ -182,7 +188,7 @@ anova(lm_model3, lm_model1_notmissing)
 # NOTE: There is a substantial amount of missing data, so complete case analysis could
 # yield biased results if the data are not Missing Completely At Random!
 
-df_completecase <- df %>%
+df_completecase <- df |>
   filter(!is.na(BPSysAve) & !is.na(agecat) & !is.na(Gender) & !is.na(racecat))
 
 lm_model1 <- lm(BPSysAve ~ factor(Education), 
@@ -229,7 +235,11 @@ head(predict(lm_model4b,
 # for five women age 45-54 who are Black Non-Hispanic
 # at each of the education levels.
 
-data_to_predict <- data.frame(Education = c("8th Grade", "9 - 11th Grade", "High School", "Some College", "College Grad"),
+data_to_predict <- data.frame(Education = c("8th Grade", 
+                                            "9 - 11th Grade", 
+                                            "High School", 
+                                            "Some College", 
+                                            "College Grad"),
                       Gender = rep("female",5),
                       agecat = rep("45-54", 5),
                       racecat = rep("Black Non-Hispanic", 5))
@@ -250,7 +260,7 @@ names(broom::augment(lm_model3))
 
 # We can also extract residuals and plot them vs. the fitted values
 # (What do we expect to see?)
-broom::augment(lm_model3) %>%
+broom::augment(lm_model3) |>
   ggplot(aes(x=.fitted, y=.resid)) +
   geom_jitter(alpha=0.3) +
   geom_smooth() +
@@ -262,11 +272,13 @@ ggsave(file="lm_model3_fitted_v_residuals.png")
 
 
 # We can also look at a variety of model fit statistics
+# using broom::glance()
 bind_rows(broom::glance(lm_model1),
   broom::glance(lm_model2),
   broom::glance(lm_model3),
-  broom::glance(lm_model4b)) %>%
-  bind_cols(c("Model 1", "Model 2", "Model 3", "Model 4"))
+  broom::glance(lm_model4b)) |>
+  bind_cols(c("Model 1", "Model 2", "Model 3", "Model 4")) |>
+  View()
   
   
   
@@ -314,7 +326,11 @@ anova(logistic_model4, logistic_model1, test="LRT")
 # predict on the logit scale vs. the response scale
 # Here, we predict for Black Non-Hispanic women and White Non-Hispanic women age 45-54
 # at each of the educational levels.
-data_to_predict <- data.frame(Education = rep(c("8th Grade", "9 - 11th Grade", "High School", "Some College", "College Grad"), 2),
+data_to_predict <- data.frame(Education = rep(c("8th Grade", 
+                                                "9 - 11th Grade", 
+                                                "High School", 
+                                                "Some College", 
+                                                "College Grad"), 2),
                               Gender = rep("female",10),
                               agecat = rep("45-54", 10),
                               racecat = rep(c("Black Non-Hispanic", "White Non-Hispanic"), each=5))
@@ -328,26 +344,26 @@ broom::augment(logistic_model4, newdata=data_to_predict, type.predict="response"
 # Creating Pretty Tables -----------------------------------------------------------
 
 # We can use functions in the gtsummary package to get pretty output
-tbl_regression(lm_model1) %>%
+tbl_regression(lm_model1) |>
   bold_labels()
 
-# I don't like that the table had factor(Education), so I can modify this
+# I don't like that the table has the label "factor(Education)", so I can modify this
 # using the label= argument
 tbl_lm_model1 <- 
-  tbl_regression(lm_model1, label = list('factor(Education)' ~ 'Education')) %>%
+  tbl_regression(lm_model1, label = list('factor(Education)' ~ 'Education')) |>
   bold_labels() 
 tbl_lm_model1
 
 # Note that we can add model fit statistics
 # using add_glance_table()
 tbl_lm_model1_glance <- 
-  tbl_regression(lm_model1, label = list('factor(Education)' ~ 'Education')) %>%
-  bold_labels() %>% 
+  tbl_regression(lm_model1, label = list('factor(Education)' ~ 'Education')) |>
+  bold_labels() |> 
   add_glance_table()
 tbl_lm_model1_glance
 
 # What if I want this printed to my console?
-tbl_lm_model1 %>%
+tbl_lm_model1 |>
   as_hux_table()
 
   
@@ -362,25 +378,27 @@ set_gtsummary_theme(theme_gtsummary_journal("jama"))
 # Note for this first one that I am showing how to integrate this
 # into a workflow where you start with the analytic data frame,
 # pipe it into lm() and then pipe the results into
-# tbl_regression
+# tbl_regression.
+# BUT: note that the first pipe has to be the magrittr pipe %>%
+# and not the "new" pipe |>
 tbl_lm_model1 <- df_completecase %>%
   lm(BPSysAve ~ factor(Education), 
-     data=.) %>%
+     data=.) |>
   tbl_regression(intercept=TRUE,
                  label = list('factor(Education)' ~ 'Education'))
 
-tbl_lm_model2 <- lm_model2 %>% 
+tbl_lm_model2 <- lm_model2 |> 
   tbl_regression(intercept=TRUE,
                  label = list('factor(Education)' ~ 'Education',
                               'factor(agecat)' ~ 'Age category'))
 
-tbl_lm_model3 <- lm_model3 %>%
+tbl_lm_model3 <- lm_model3 |>
   tbl_regression(intercept=TRUE,
                  label = list('factor(Education)' ~ 'Education',
                               'factor(agecat)' ~ 'Age category',
                               'factor(racecat)' ~ 'Racialized group'))
 
-tbl_lm_model4 <- lm_model4b %>%
+tbl_lm_model4 <- lm_model4b |>
   tbl_regression(intercept=TRUE,
                  label = list('factor(Education)' ~ 'Education',
                               'factor(agecat)' ~ 'Age category',
