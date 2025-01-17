@@ -538,7 +538,8 @@ ggplot(lm_education_estimates, aes(x=category, y=estimate, color=model, shape=mo
   # scale_color_brewer allows me to control the colors for plotting the different models
     scale_color_brewer(palette="Set1") +
     labs(x="Education", y=expression(hat(beta))) +
-    theme_bw()
+    theme_bw() +
+    theme(legend.position = "bottom")
 
 ggsave(file="lm_model_comparison_figure.pdf", width=10, height=8)
 
