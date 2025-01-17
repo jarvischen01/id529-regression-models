@@ -30,7 +30,7 @@ This example uses the NHANES dataset and the linear and logistic regression mode
 
 # Setting up the data and fitting linear and logistic regression models to use as examples
 
-```{r}
+```{r datacleaning}
 
 # Set up the analytic dataset
 df <- NHANES  %>%  
@@ -108,9 +108,10 @@ logistic_model4 <- glm(SmokeNow ~ factor(Education) + factor(agecat) + interacti
                family=binomial(link=logit),
                data=df_completecase)
 
+summary(logistic_model4)
 ```
 
-Note that if you simply call `broom::tidy` and use the default chunk options in RMarkdown, the results of calling `broom::tidy` will appear in your knitted output.
+Note that if you simply call `broom::tidy` and use the default chunk options in RMarkdown, the results of calling `broom::tidy` will appear in your knitted output. Oh, by the way, the mean of the blood pressure variable is **`r round(mean(df_completecase$BPSysAve, na.rm=T), 2)` mmHg**.
 
 ```{r}
 broom::tidy(lm_model4)

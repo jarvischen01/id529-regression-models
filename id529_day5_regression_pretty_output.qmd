@@ -43,7 +43,7 @@ Jarvis Chen
 
 <br>
 
-Friday, January 12, 2024
+Friday, January 17, 2025
 
 
 ## Follow along {.smaller}
@@ -309,7 +309,7 @@ tbl_merge_ex1 %>%
   - filter out just the education terms,
   - and pipe the tibble into `ggplot` in order to plot the estimates.
 
-## .{smaller}
+## A workflow for plotting model estimates {.smaller}
 
 ```{r}
 # Extract the education effects from each model and combine in a tibble
@@ -329,12 +329,15 @@ lm_education_estimates <- bind_rows(broom::tidy(lm_model1, conf.int=TRUE) %>%
   separate(col=term, sep=17, into=c("term", "category"), convert=TRUE)
 ```
 
-## {.smaller}
+## A workflow for plotting model estimates {.smaller}
 
-```{r}
+::: columns
+::: column
+
+```{r, fig.keep='none'}
 # Use ggplot to plot the point estimates and 95% CIs
 # Note that we are differentiating the models by color AND by the shape of the plotting symbol
-ggplot(lm_education_estimates, aes(x=category, y=estimate, color=model, shape=model)) +
+comparison <- ggplot(lm_education_estimates, aes(x=category, y=estimate, color=model, shape=model)) +
   # position=position_dodge() is specified so that the estimates are side by side rather than
   # plotted on top of one another
     geom_point(position=position_dodge(0.5), size=3) +
@@ -343,6 +346,19 @@ ggplot(lm_education_estimates, aes(x=category, y=estimate, color=model, shape=mo
   # scale_color_brewer allows me to control the colors for plotting the different models
     scale_color_brewer(palette="Set1") +
     labs(x="Education", y=expression(hat(beta))) +
-    theme_bw()
+    theme_bw() +
+    theme(legend.position = "bottom")
 ```
+
+:::
+
+::: column
+
+```{r, fig.width=5, fig.height=6}
+print(comparison)
+```
+
+::: 
+:::
+
 

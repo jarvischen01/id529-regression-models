@@ -8,7 +8,7 @@
 <link href="id529_day4_regression_slides_files/libs/quarto-html/light-border.css" rel="stylesheet">
 <link href="id529_day4_regression_slides_files/libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
 <link href="id529_day4_regression_slides_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.3.450">
+  <meta name="generator" content="quarto-1.5.57">
 
   <title>id529_day4_regression_slides</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,7 +30,7 @@
     }
     /* CSS for syntax highlighting */
     pre > code.sourceCode { white-space: pre; position: relative; }
-    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span { line-height: 1.25; }
     pre > code.sourceCode > span:empty { height: 1.2em; }
     .sourceCode { overflow: visible; }
     code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -41,7 +41,7 @@
     }
     @media print {
     pre > code.sourceCode { white-space: pre-wrap; }
-    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
     }
     pre.numberSource code
       { counter-reset: source-line 0; }
@@ -69,7 +69,7 @@
     code span.at { color: #657422; } /* Attribute */
     code span.bn { color: #ad0000; } /* BaseN */
     code span.bu { } /* BuiltIn */
-    code span.cf { color: #003b4f; } /* ControlFlow */
+    code span.cf { color: #003b4f; font-weight: bold; } /* ControlFlow */
     code span.ch { color: #20794d; } /* Char */
     code span.cn { color: #8f5902; } /* Constant */
     code span.co { color: #5e5e5e; } /* Comment */
@@ -83,7 +83,7 @@
     code span.fu { color: #4758ab; } /* Function */
     code span.im { color: #00769e; } /* Import */
     code span.in { color: #5e5e5e; } /* Information */
-    code span.kw { color: #003b4f; } /* Keyword */
+    code span.kw { color: #003b4f; font-weight: bold; } /* Keyword */
     code span.op { color: #5e5e5e; } /* Operator */
     code span.ot { color: #003b4f; } /* Other */
     code span.pp { color: #ad0000; } /* Preprocessor */
@@ -221,7 +221,8 @@
   }
 
   .callout.callout-titled .callout-body > .callout-content > :last-child {
-    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0;
   }
 
   .callout.callout-titled .callout-icon::before {
@@ -398,7 +399,7 @@
 <p><br></p>
 <hr>
 <p><br></p>
-<p>Thursday, January 11, 2024</p>
+<p>Thursday, January 16, 2025</p>
 </section>
 <section id="follow-along" class="slide level2 smaller">
 <h2>Follow along</h2>
@@ -407,7 +408,7 @@
 <p>https://bit.ly/id529_regression_models <br> <br></p>
 <ul>
 <li><p>Clone the repository and open it as a <code>R</code> Project in your RStudio.</p></li>
-<li><p>Open the <code>id529\_day4\_regression\_models.R</code> script. You can follow along, annotate, and/or run the code in your own R session.</p></li>
+<li><p>Open the <code>id529_day4_regression_models.R</code> script. You can follow along, annotate, and/or run the code in your own R session.</p></li>
 </ul>
 </center></section>
 <section id="section" class="slide level2">
@@ -479,31 +480,31 @@
 <li>For this example, we will use the NHANES data from the <code>NHANES</code> package. Note that this is <strong>different</strong> from the <code>nhanes_id529</code> data in the <code>ID529data</code> package.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>df <span class="ot">&lt;-</span> NHANES  <span class="sc">|&gt;</span>  </span>
-<span id="cb1-2"><a href="#cb1-2"></a>  <span class="co"># Remember that we have to restrict to people 25 and above</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>  <span class="fu">filter</span>(Age<span class="sc">&gt;=</span><span class="dv">25</span>)  <span class="sc">|&gt;</span> </span>
-<span id="cb1-4"><a href="#cb1-4"></a>  <span class="co"># recoding of the variables we're going to use</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>  <span class="fu">mutate</span>(<span class="at">agecat =</span> <span class="fu">case_when</span>(</span>
-<span id="cb1-6"><a href="#cb1-6"></a>      Age <span class="sc">&lt;</span> <span class="dv">35</span> <span class="sc">~</span> <span class="st">"25-34"</span>,</span>
-<span id="cb1-7"><a href="#cb1-7"></a>      <span class="dv">35</span> <span class="sc">&lt;=</span> Age <span class="sc">&amp;</span> Age <span class="sc">&lt;</span> <span class="dv">45</span> <span class="sc">~</span> <span class="st">"35-44"</span>,</span>
-<span id="cb1-8"><a href="#cb1-8"></a>      Age <span class="sc">&gt;=</span> <span class="dv">45</span> <span class="sc">&amp;</span> Age <span class="sc">&lt;</span> <span class="dv">55</span> <span class="sc">~</span> <span class="st">"45-54"</span>,</span>
-<span id="cb1-9"><a href="#cb1-9"></a>      Age <span class="sc">&gt;=</span> <span class="dv">55</span> <span class="sc">&amp;</span> Age <span class="sc">&lt;</span> <span class="dv">65</span> <span class="sc">~</span> <span class="st">"55-64"</span>,</span>
-<span id="cb1-10"><a href="#cb1-10"></a>      Age <span class="sc">&gt;=</span> <span class="dv">65</span> <span class="sc">&amp;</span> Age <span class="sc">&lt;</span> <span class="dv">75</span> <span class="sc">~</span> <span class="st">"65-74"</span>,</span>
-<span id="cb1-11"><a href="#cb1-11"></a>      Age <span class="sc">&gt;=</span> <span class="dv">75</span> <span class="sc">~</span> <span class="st">"75+"</span>),</span>
-<span id="cb1-12"><a href="#cb1-12"></a>    <span class="co"># We want College Grad to be the reference category for education, so we'll</span></span>
-<span id="cb1-13"><a href="#cb1-13"></a>    <span class="co"># re-order the factor so that it is reversed from the way it came in the NHANES dataset</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a>    <span class="at">Education =</span> <span class="fu">factor</span>(Education, </span>
-<span id="cb1-15"><a href="#cb1-15"></a>                       <span class="at">levels=</span><span class="fu">rev</span>(<span class="fu">levels</span>(NHANES<span class="sc">$</span>Education))),</span>
-<span id="cb1-16"><a href="#cb1-16"></a>    <span class="co"># Here we collapse Hispanic and Mexican into the Hispanic category</span></span>
-<span id="cb1-17"><a href="#cb1-17"></a>    <span class="at">racecat =</span> <span class="fu">factor</span>(<span class="fu">case_when</span>(</span>
-<span id="cb1-18"><a href="#cb1-18"></a>      Race1 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Hispanic"</span>, <span class="st">"Mexican"</span>) <span class="sc">~</span> <span class="st">"Hispanic"</span>,</span>
-<span id="cb1-19"><a href="#cb1-19"></a>      Race1 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Asian"</span>, <span class="st">"Other"</span>) <span class="sc">~</span> <span class="st">"Other Non-Hispanic"</span>,</span>
-<span id="cb1-20"><a href="#cb1-20"></a>      Race1 <span class="sc">==</span> <span class="st">"Black"</span> <span class="sc">~</span> <span class="st">"Black Non-Hispanic"</span>,</span>
-<span id="cb1-21"><a href="#cb1-21"></a>      Race1 <span class="sc">==</span> <span class="st">"White"</span> <span class="sc">~</span> <span class="st">"White Non-Hispanic"</span>), </span>
-<span id="cb1-22"><a href="#cb1-22"></a>      <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"White Non-Hispanic"</span>, <span class="st">"Black Non-Hispanic"</span>, <span class="st">"Hispanic"</span>, <span class="st">"Other Non-Hispanic"</span>))</span>
-<span id="cb1-23"><a href="#cb1-23"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb1-24"><a href="#cb1-24"></a>  <span class="co"># select just variables we are going to use in the analysis</span></span>
-<span id="cb1-25"><a href="#cb1-25"></a>  <span class="fu">select</span>(ID, SurveyYr, Gender, Age, agecat, Education, racecat, BPSysAve, SmokeNow)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a>df <span class="ot">&lt;-</span> NHANES  <span class="sc">|&gt;</span>  </span>
+<span id="cb1-2"><a href=""></a>  <span class="co"># Remember that we have to restrict to people 25 and above</span></span>
+<span id="cb1-3"><a href=""></a>  <span class="fu">filter</span>(Age<span class="sc">&gt;=</span><span class="dv">25</span>)  <span class="sc">|&gt;</span> </span>
+<span id="cb1-4"><a href=""></a>  <span class="co"># recoding of the variables we're going to use</span></span>
+<span id="cb1-5"><a href=""></a>  <span class="fu">mutate</span>(<span class="at">agecat =</span> <span class="fu">case_when</span>(</span>
+<span id="cb1-6"><a href=""></a>      Age <span class="sc">&lt;</span> <span class="dv">35</span> <span class="sc">~</span> <span class="st">"25-34"</span>,</span>
+<span id="cb1-7"><a href=""></a>      <span class="dv">35</span> <span class="sc">&lt;=</span> Age <span class="sc">&amp;</span> Age <span class="sc">&lt;</span> <span class="dv">45</span> <span class="sc">~</span> <span class="st">"35-44"</span>,</span>
+<span id="cb1-8"><a href=""></a>      Age <span class="sc">&gt;=</span> <span class="dv">45</span> <span class="sc">&amp;</span> Age <span class="sc">&lt;</span> <span class="dv">55</span> <span class="sc">~</span> <span class="st">"45-54"</span>,</span>
+<span id="cb1-9"><a href=""></a>      Age <span class="sc">&gt;=</span> <span class="dv">55</span> <span class="sc">&amp;</span> Age <span class="sc">&lt;</span> <span class="dv">65</span> <span class="sc">~</span> <span class="st">"55-64"</span>,</span>
+<span id="cb1-10"><a href=""></a>      Age <span class="sc">&gt;=</span> <span class="dv">65</span> <span class="sc">&amp;</span> Age <span class="sc">&lt;</span> <span class="dv">75</span> <span class="sc">~</span> <span class="st">"65-74"</span>,</span>
+<span id="cb1-11"><a href=""></a>      Age <span class="sc">&gt;=</span> <span class="dv">75</span> <span class="sc">~</span> <span class="st">"75+"</span>),</span>
+<span id="cb1-12"><a href=""></a>    <span class="co"># We want College Grad to be the reference category for education, so we'll</span></span>
+<span id="cb1-13"><a href=""></a>    <span class="co"># re-order the factor so that it is reversed from the way it came in the NHANES dataset</span></span>
+<span id="cb1-14"><a href=""></a>    <span class="at">Education =</span> <span class="fu">factor</span>(Education, </span>
+<span id="cb1-15"><a href=""></a>                       <span class="at">levels=</span><span class="fu">rev</span>(<span class="fu">levels</span>(NHANES<span class="sc">$</span>Education))),</span>
+<span id="cb1-16"><a href=""></a>    <span class="co"># Here we collapse Hispanic and Mexican into the Hispanic category</span></span>
+<span id="cb1-17"><a href=""></a>    <span class="at">racecat =</span> <span class="fu">factor</span>(<span class="fu">case_when</span>(</span>
+<span id="cb1-18"><a href=""></a>      Race1 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Hispanic"</span>, <span class="st">"Mexican"</span>) <span class="sc">~</span> <span class="st">"Hispanic"</span>,</span>
+<span id="cb1-19"><a href=""></a>      Race1 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Asian"</span>, <span class="st">"Other"</span>) <span class="sc">~</span> <span class="st">"Other Non-Hispanic"</span>,</span>
+<span id="cb1-20"><a href=""></a>      Race1 <span class="sc">==</span> <span class="st">"Black"</span> <span class="sc">~</span> <span class="st">"Black Non-Hispanic"</span>,</span>
+<span id="cb1-21"><a href=""></a>      Race1 <span class="sc">==</span> <span class="st">"White"</span> <span class="sc">~</span> <span class="st">"White Non-Hispanic"</span>), </span>
+<span id="cb1-22"><a href=""></a>      <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"White Non-Hispanic"</span>, <span class="st">"Black Non-Hispanic"</span>, <span class="st">"Hispanic"</span>, <span class="st">"Other Non-Hispanic"</span>))</span>
+<span id="cb1-23"><a href=""></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb1-24"><a href=""></a>  <span class="co"># select just variables we are going to use in the analysis</span></span>
+<span id="cb1-25"><a href=""></a>  <span class="fu">select</span>(ID, SurveyYr, Gender, Age, agecat, Education, racecat, BPSysAve, SmokeNow)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="a-basic-call-to-lm" class="slide level2 smaller">
@@ -512,15 +513,15 @@
 <li>You’ve probably seen something like this in a basic statistics class</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>lm_model1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education), </span>
-<span id="cb2-2"><a href="#cb2-2"></a>              <span class="at">data=</span>df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href=""></a>lm_model1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education), </span>
+<span id="cb2-2"><a href=""></a>              <span class="at">data=</span>df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <ul>
 <li><p>This creates an object called <code>lm_model1</code> where we are storing the results of having fit a linear regression model with <code>BPSysAve</code> as the dependent variable and categories of <code>Education</code> as the independent variables.</p></li>
 <li><p>To see the actual results, we have to do something like</p></li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="fu">print</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href=""></a><span class="fu">print</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -539,7 +540,7 @@ Coefficients:
 <section id="summarizing-the-model-object" class="slide level2 smaller">
 <h2>Summarizing the model object</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a><span class="fu">summary</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href=""></a><span class="fu">summary</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -569,7 +570,7 @@ F-statistic: 30.38 on 4 and 6319 DF,  p-value: &lt; 2.2e-16</code></pre>
 <section id="other-ways-of-summarizing-the-model" class="slide level2 smaller">
 <h2>Other ways of summarizing the model</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="fu">anova</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href=""></a><span class="fu">anova</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Analysis of Variance Table
 
@@ -585,7 +586,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <section id="exploring-the-model-object-more-fully" class="slide level2 smaller">
 <h2>Exploring the model object more fully</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="fu">class</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href=""></a><span class="fu">class</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "lm"</code></pre>
 </div>
@@ -594,7 +595,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <li>It’s an object of class “lm”, but it’s also a list in that it has various elements of different types and different lengths</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a><span class="fu">names</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href=""></a><span class="fu">names</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "coefficients"  "residuals"     "effects"       "rank"         
  [5] "fitted.values" "assign"        "qr"            "df.residual"  
@@ -606,7 +607,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <li>Note that <code>summary(lm_model1)</code> is <strong>also</strong> a list that has different elements from <code>lm_model1</code>!</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="fu">names</span>(<span class="fu">summary</span>(lm_model1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href=""></a><span class="fu">names</span>(<span class="fu">summary</span>(lm_model1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "call"          "terms"         "residuals"     "coefficients" 
  [5] "aliased"       "sigma"         "df"            "r.squared"    
@@ -620,7 +621,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <li>Note the difference between the list item called <code>coefficients</code> in the <code>lm_model1</code> object and the list item called <code>coefficients</code> in the <code>summary(lm_model1)</code> object</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a>lm_model1<span class="sc">$</span>coefficients</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href=""></a>lm_model1<span class="sc">$</span>coefficients</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                    (Intercept)   factor(Education)Some College 
                      118.563395                        3.750341 
@@ -631,7 +632,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a><span class="fu">summary</span>(lm_model1)<span class="sc">$</span>coefficients</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href=""></a><span class="fu">summary</span>(lm_model1)<span class="sc">$</span>coefficients</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                                  Estimate Std. Error    t value     Pr(&gt;|t|)
 (Intercept)                     118.563395  0.3906963 303.466895 0.000000e+00
@@ -645,8 +646,8 @@ factor(Education)8th Grade        7.920635  0.9413995   8.413681 4.864442e-17</c
 <section id="extracting-quantities-of-interest" class="slide level2 smaller">
 <h2>Extracting quantities of interest</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a><span class="co"># point estimates</span></span>
-<span id="cb19-2"><a href="#cb19-2"></a><span class="fu">coef</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href=""></a><span class="co"># point estimates</span></span>
+<span id="cb19-2"><a href=""></a><span class="fu">coef</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                    (Intercept)   factor(Education)Some College 
                      118.563395                        3.750341 
@@ -657,8 +658,8 @@ factor(Education)8th Grade        7.920635  0.9413995   8.413681 4.864442e-17</c
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a><span class="co"># confidence limits</span></span>
-<span id="cb21-2"><a href="#cb21-2"></a><span class="fu">confint</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href=""></a><span class="co"># confidence limits</span></span>
+<span id="cb21-2"><a href=""></a><span class="fu">confint</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                                     2.5 %     97.5 %
 (Intercept)                     117.797497 119.329292
@@ -672,7 +673,7 @@ factor(Education)8th Grade        6.075172   9.766097</code></pre>
 <li>We might be interested in looking at the coefficients and their 95% CIs together</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1"></a><span class="fu">cbind</span>(<span class="fu">coef</span>(lm_model1), <span class="fu">confint</span>(lm_model1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href=""></a><span class="fu">cbind</span>(<span class="fu">coef</span>(lm_model1), <span class="fu">confint</span>(lm_model1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                                                2.5 %     97.5 %
 (Intercept)                     118.563395 117.797497 119.329292
@@ -689,24 +690,24 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li>Let’s write our own function to extract point estimates and 95% CI from the model object.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1"></a>f_get_coefficients <span class="ot">&lt;-</span> <span class="cf">function</span>(model){</span>
-<span id="cb25-2"><a href="#cb25-2"></a>  </span>
-<span id="cb25-3"><a href="#cb25-3"></a>  <span class="co"># grab the names of the effects in the model</span></span>
-<span id="cb25-4"><a href="#cb25-4"></a>  get_names <span class="ot">&lt;-</span> <span class="fu">names</span>(<span class="fu">coef</span>(model))</span>
-<span id="cb25-5"><a href="#cb25-5"></a>  </span>
-<span id="cb25-6"><a href="#cb25-6"></a>  <span class="co"># grab the coefficients and the 95% confidence limits</span></span>
-<span id="cb25-7"><a href="#cb25-7"></a>  <span class="co"># and put them in a matrix</span></span>
-<span id="cb25-8"><a href="#cb25-8"></a>  estimates_and_cis <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="fu">coef</span>(model), <span class="fu">confint</span>(model))</span>
-<span id="cb25-9"><a href="#cb25-9"></a>  </span>
-<span id="cb25-10"><a href="#cb25-10"></a>  <span class="co"># put everything into a tibble and return it</span></span>
-<span id="cb25-11"><a href="#cb25-11"></a>  <span class="fu">return</span>(<span class="fu">tibble</span>(<span class="at">term =</span> get_names, </span>
-<span id="cb25-12"><a href="#cb25-12"></a>         <span class="at">estimate =</span> estimates_and_cis[,<span class="dv">1</span>],</span>
-<span id="cb25-13"><a href="#cb25-13"></a>         <span class="at">lci =</span> estimates_and_cis[,<span class="dv">2</span>],</span>
-<span id="cb25-14"><a href="#cb25-14"></a>         <span class="at">uci =</span> estimates_and_cis[,<span class="dv">3</span>]))</span>
-<span id="cb25-15"><a href="#cb25-15"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href=""></a>f_get_coefficients <span class="ot">&lt;-</span> <span class="cf">function</span>(model){</span>
+<span id="cb25-2"><a href=""></a>  </span>
+<span id="cb25-3"><a href=""></a>  <span class="co"># grab the names of the effects in the model</span></span>
+<span id="cb25-4"><a href=""></a>  get_names <span class="ot">&lt;-</span> <span class="fu">names</span>(<span class="fu">coef</span>(model))</span>
+<span id="cb25-5"><a href=""></a>  </span>
+<span id="cb25-6"><a href=""></a>  <span class="co"># grab the coefficients and the 95% confidence limits</span></span>
+<span id="cb25-7"><a href=""></a>  <span class="co"># and put them in a matrix</span></span>
+<span id="cb25-8"><a href=""></a>  estimates_and_cis <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="fu">coef</span>(model), <span class="fu">confint</span>(model))</span>
+<span id="cb25-9"><a href=""></a>  </span>
+<span id="cb25-10"><a href=""></a>  <span class="co"># put everything into a tibble and return it</span></span>
+<span id="cb25-11"><a href=""></a>  <span class="fu">return</span>(<span class="fu">tibble</span>(<span class="at">term =</span> get_names, </span>
+<span id="cb25-12"><a href=""></a>         <span class="at">estimate =</span> estimates_and_cis[,<span class="dv">1</span>],</span>
+<span id="cb25-13"><a href=""></a>         <span class="at">lci =</span> estimates_and_cis[,<span class="dv">2</span>],</span>
+<span id="cb25-14"><a href=""></a>         <span class="at">uci =</span> estimates_and_cis[,<span class="dv">3</span>]))</span>
+<span id="cb25-15"><a href=""></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a><span class="fu">f_get_coefficients</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href=""></a><span class="fu">f_get_coefficients</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 4
   term                            estimate    lci    uci
@@ -725,7 +726,7 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li>The <code>broom</code> package has a function called <code>tidy</code> that extracts model output and puts it in tibble format</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href=""></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 5
   term                            estimate std.error statistic  p.value
@@ -741,7 +742,7 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li>We can add the confidence limits to the tibble using the conf.int=TRUE argument</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model1, <span class="at">conf.int=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href=""></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model1, <span class="at">conf.int=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 7
   term                  estimate std.error statistic  p.value conf.low conf.high
@@ -763,10 +764,10 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li>Many regression functions in <code>R</code> allow us to subset or restrict the data to a particular group</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a>lm_model1_female <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education), </span>
-<span id="cb32-2"><a href="#cb32-2"></a>                <span class="at">data=</span>df,</span>
-<span id="cb32-3"><a href="#cb32-3"></a>                <span class="at">subset=</span>(Gender<span class="sc">==</span><span class="st">"female"</span>))</span>
-<span id="cb32-4"><a href="#cb32-4"></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model1_female)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href=""></a>lm_model1_female <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education), </span>
+<span id="cb32-2"><a href=""></a>                <span class="at">data=</span>df,</span>
+<span id="cb32-3"><a href=""></a>                <span class="at">subset=</span>(Gender<span class="sc">==</span><span class="st">"female"</span>))</span>
+<span id="cb32-4"><a href=""></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model1_female)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 5
   term                            estimate std.error statistic  p.value
@@ -781,8 +782,8 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <ul>
 <li>We could accomplish something similar by calling</li>
 </ul>
-<div class="sourceCode" id="cb34"><pre class="sourceCode numberSource r no-exec number-lines code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1"></a>lm_model1_female <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education), </span>
-<span id="cb34-2"><a href="#cb34-2"></a>                <span class="at">data=</span>df <span class="sc">|&gt;</span> <span class="fu">filter</span>(Gender<span class="sc">==</span><span class="st">"female"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode numberSource r no-exec number-lines code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href=""></a>lm_model1_female <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education), </span>
+<span id="cb34-2"><a href=""></a>                <span class="at">data=</span>df <span class="sc">|&gt;</span> <span class="fu">filter</span>(Gender<span class="sc">==</span><span class="st">"female"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="restricting-to-non-missing-observations" class="slide level2 smaller">
 <h2>Restricting to non-missing observations</h2>
@@ -790,20 +791,20 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li>Though most regression functions will automatically drop observations with <code>NA</code>, sometimes we may want to explicitly filter out missing observations on any of the covariates we are going to include while model building to make sure that we can compare models based on the same number of observations.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1"></a>df_completecase <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
-<span id="cb35-2"><a href="#cb35-2"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(BPSysAve) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(agecat) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(Gender) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(racecat))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href=""></a>df_completecase <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb35-2"><a href=""></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(BPSysAve) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(agecat) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(Gender) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(racecat))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="fitting-multiple-models" class="slide level2 smaller">
 <h2>Fitting multiple models</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1"></a>lm_model1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(</span>
-<span id="cb36-2"><a href="#cb36-2"></a>  Education), </span>
-<span id="cb36-3"><a href="#cb36-3"></a>                <span class="at">data=</span>df_completecase)</span>
-<span id="cb36-4"><a href="#cb36-4"></a>lm_model2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education) <span class="sc">+</span> <span class="fu">factor</span>(agecat) <span class="sc">+</span> Gender, </span>
-<span id="cb36-5"><a href="#cb36-5"></a>                <span class="at">data=</span>df_completecase)</span>
-<span id="cb36-6"><a href="#cb36-6"></a>lm_model3 <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education) <span class="sc">+</span> <span class="fu">factor</span>(agecat) <span class="sc">+</span> Gender <span class="sc">+</span> <span class="fu">factor</span>(racecat), </span>
-<span id="cb36-7"><a href="#cb36-7"></a>                <span class="at">data=</span>df_completecase)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href=""></a>lm_model1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(</span>
+<span id="cb36-2"><a href=""></a>  Education), </span>
+<span id="cb36-3"><a href=""></a>                <span class="at">data=</span>df_completecase)</span>
+<span id="cb36-4"><a href=""></a>lm_model2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education) <span class="sc">+</span> <span class="fu">factor</span>(agecat) <span class="sc">+</span> Gender, </span>
+<span id="cb36-5"><a href=""></a>                <span class="at">data=</span>df_completecase)</span>
+<span id="cb36-6"><a href=""></a>lm_model3 <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education) <span class="sc">+</span> <span class="fu">factor</span>(agecat) <span class="sc">+</span> Gender <span class="sc">+</span> <span class="fu">factor</span>(racecat), </span>
+<span id="cb36-7"><a href=""></a>                <span class="at">data=</span>df_completecase)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="models-with-interactions" class="slide level2 smaller">
@@ -812,9 +813,9 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li>We also think we should try to fit a model with an interaction between gender and racialized group</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1"></a>lm_model4a <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education) <span class="sc">+</span> <span class="fu">factor</span>(agecat) <span class="sc">+</span> Gender<span class="sc">*</span><span class="fu">factor</span>(racecat), </span>
-<span id="cb37-2"><a href="#cb37-2"></a>                 <span class="at">data=</span>df_completecase)</span>
-<span id="cb37-3"><a href="#cb37-3"></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model4a)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href=""></a>lm_model4a <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education) <span class="sc">+</span> <span class="fu">factor</span>(agecat) <span class="sc">+</span> Gender<span class="sc">*</span><span class="fu">factor</span>(racecat), </span>
+<span id="cb37-2"><a href=""></a>                 <span class="at">data=</span>df_completecase)</span>
+<span id="cb37-3"><a href=""></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model4a)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 17 × 5
    term                                   estimate std.error statistic   p.value
@@ -853,9 +854,9 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li>Useful when we want to compare to a common referent category.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1"></a>lm_model4b <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education) <span class="sc">+</span> <span class="fu">factor</span>(agecat) <span class="sc">+</span> <span class="fu">interaction</span>(Gender,<span class="fu">factor</span>(racecat)), </span>
-<span id="cb39-2"><a href="#cb39-2"></a>                 <span class="at">data=</span>df_completecase)</span>
-<span id="cb39-3"><a href="#cb39-3"></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model4b)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href=""></a>lm_model4b <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education) <span class="sc">+</span> <span class="fu">factor</span>(agecat) <span class="sc">+</span> <span class="fu">interaction</span>(Gender,<span class="fu">factor</span>(racecat)), </span>
+<span id="cb39-2"><a href=""></a>                 <span class="at">data=</span>df_completecase)</span>
+<span id="cb39-3"><a href=""></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model4b)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 17 × 5
    term                                   estimate std.error statistic   p.value
@@ -884,9 +885,9 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <h2>Models with interactions</h2>
 <p>Another way to fit the interaction is with the <code>/</code> operator. In this example, it is giving us the racialized group effect WITHIN gender categories</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1"></a>lm_model4c <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education) <span class="sc">+</span> <span class="fu">factor</span>(agecat) <span class="sc">+</span> <span class="fu">factor</span>(racecat)<span class="sc">/</span>Gender, </span>
-<span id="cb41-2"><a href="#cb41-2"></a>                 <span class="at">data=</span>df_completecase)</span>
-<span id="cb41-3"><a href="#cb41-3"></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model4c)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href=""></a>lm_model4c <span class="ot">&lt;-</span> <span class="fu">lm</span>(BPSysAve <span class="sc">~</span> <span class="fu">factor</span>(Education) <span class="sc">+</span> <span class="fu">factor</span>(agecat) <span class="sc">+</span> <span class="fu">factor</span>(racecat)<span class="sc">/</span>Gender, </span>
+<span id="cb41-2"><a href=""></a>                 <span class="at">data=</span>df_completecase)</span>
+<span id="cb41-3"><a href=""></a>broom<span class="sc">::</span><span class="fu">tidy</span>(lm_model4c)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 17 × 5
    term                                   estimate std.error statistic   p.value
@@ -918,9 +919,9 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li><p>We can use the predict() function to predict the fitted <code>BPSysAve</code> for everyone in the original dataset</p></li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1"></a><span class="co"># predicting on the original dataset</span></span>
-<span id="cb43-2"><a href="#cb43-2"></a><span class="fu">head</span>(<span class="fu">predict</span>(lm_model4b, </span>
-<span id="cb43-3"><a href="#cb43-3"></a>        <span class="at">interval =</span> <span class="st">"prediction"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href=""></a><span class="co"># predicting on the original dataset</span></span>
+<span id="cb43-2"><a href=""></a><span class="fu">head</span>(<span class="fu">predict</span>(lm_model4b, </span>
+<span id="cb43-3"><a href=""></a>        <span class="at">interval =</span> <span class="st">"prediction"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>       fit      lwr      upr
 1 116.2887 85.47004 147.1074
@@ -940,16 +941,16 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li>Here, we predict average systolic blood pressure for five women age 45-54 who are Black Non-Hispanic at each of the education levels.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1"></a>data_to_predict <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Education =</span> <span class="fu">c</span>(<span class="st">"8th Grade"</span>, </span>
-<span id="cb45-2"><a href="#cb45-2"></a>                                            <span class="st">"9 - 11th Grade"</span>, </span>
-<span id="cb45-3"><a href="#cb45-3"></a>                                            <span class="st">"High School"</span>, </span>
-<span id="cb45-4"><a href="#cb45-4"></a>                                            <span class="st">"Some College"</span>, </span>
-<span id="cb45-5"><a href="#cb45-5"></a>                                            <span class="st">"College Grad"</span>),</span>
-<span id="cb45-6"><a href="#cb45-6"></a>                      <span class="at">Gender =</span> <span class="fu">rep</span>(<span class="st">"female"</span>,<span class="dv">5</span>),</span>
-<span id="cb45-7"><a href="#cb45-7"></a>                      <span class="at">agecat =</span> <span class="fu">rep</span>(<span class="st">"45-54"</span>, <span class="dv">5</span>),</span>
-<span id="cb45-8"><a href="#cb45-8"></a>                      <span class="at">racecat =</span> <span class="fu">rep</span>(<span class="st">"Black Non-Hispanic"</span>, <span class="dv">5</span>))</span>
-<span id="cb45-9"><a href="#cb45-9"></a></span>
-<span id="cb45-10"><a href="#cb45-10"></a><span class="fu">print</span>(data_to_predict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href=""></a>data_to_predict <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Education =</span> <span class="fu">c</span>(<span class="st">"8th Grade"</span>, </span>
+<span id="cb45-2"><a href=""></a>                                            <span class="st">"9 - 11th Grade"</span>, </span>
+<span id="cb45-3"><a href=""></a>                                            <span class="st">"High School"</span>, </span>
+<span id="cb45-4"><a href=""></a>                                            <span class="st">"Some College"</span>, </span>
+<span id="cb45-5"><a href=""></a>                                            <span class="st">"College Grad"</span>),</span>
+<span id="cb45-6"><a href=""></a>                      <span class="at">Gender =</span> <span class="fu">rep</span>(<span class="st">"female"</span>,<span class="dv">5</span>),</span>
+<span id="cb45-7"><a href=""></a>                      <span class="at">agecat =</span> <span class="fu">rep</span>(<span class="st">"45-54"</span>, <span class="dv">5</span>),</span>
+<span id="cb45-8"><a href=""></a>                      <span class="at">racecat =</span> <span class="fu">rep</span>(<span class="st">"Black Non-Hispanic"</span>, <span class="dv">5</span>))</span>
+<span id="cb45-9"><a href=""></a></span>
+<span id="cb45-10"><a href=""></a><span class="fu">print</span>(data_to_predict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>       Education Gender agecat            racecat
 1      8th Grade female  45-54 Black Non-Hispanic
@@ -963,9 +964,9 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <section id="predictions-2" class="slide level2 smaller">
 <h2>Predictions</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1"></a><span class="fu">predict</span>(lm_model4b, </span>
-<span id="cb47-2"><a href="#cb47-2"></a>        <span class="at">newdata=</span>data_to_predict,</span>
-<span id="cb47-3"><a href="#cb47-3"></a>        <span class="at">interval =</span> <span class="st">"confidence"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href=""></a><span class="fu">predict</span>(lm_model4b, </span>
+<span id="cb47-2"><a href=""></a>        <span class="at">newdata=</span>data_to_predict,</span>
+<span id="cb47-3"><a href=""></a>        <span class="at">interval =</span> <span class="st">"confidence"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>       fit      lwr      upr
 1 124.2857 121.8173 126.7540
@@ -982,7 +983,7 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li>The <code>broom</code> package can also do this for us using the <code>augment()</code> function</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1"></a>broom<span class="sc">::</span><span class="fu">augment</span>(lm_model4b, <span class="at">newdata=</span>data_to_predict, <span class="at">interval =</span> <span class="st">"confidence"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href=""></a>broom<span class="sc">::</span><span class="fu">augment</span>(lm_model4b, <span class="at">newdata=</span>data_to_predict, <span class="at">interval =</span> <span class="st">"confidence"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 7
   Education      Gender agecat racecat            .fitted .lower .upper
@@ -1002,11 +1003,11 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li>We can also look at a variety of model fit statistics using <code>broom::glance()</code></li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1"></a><span class="fu">bind_rows</span>(broom<span class="sc">::</span><span class="fu">glance</span>(lm_model1),</span>
-<span id="cb51-2"><a href="#cb51-2"></a>  broom<span class="sc">::</span><span class="fu">glance</span>(lm_model2),</span>
-<span id="cb51-3"><a href="#cb51-3"></a>  broom<span class="sc">::</span><span class="fu">glance</span>(lm_model3),</span>
-<span id="cb51-4"><a href="#cb51-4"></a>  broom<span class="sc">::</span><span class="fu">glance</span>(lm_model4b)) <span class="sc">|&gt;</span></span>
-<span id="cb51-5"><a href="#cb51-5"></a>  <span class="fu">bind_cols</span>(<span class="fu">c</span>(<span class="st">"Model 1"</span>, <span class="st">"Model 2"</span>, <span class="st">"Model 3"</span>, <span class="st">"Model 4"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href=""></a><span class="fu">bind_rows</span>(broom<span class="sc">::</span><span class="fu">glance</span>(lm_model1),</span>
+<span id="cb51-2"><a href=""></a>  broom<span class="sc">::</span><span class="fu">glance</span>(lm_model2),</span>
+<span id="cb51-3"><a href=""></a>  broom<span class="sc">::</span><span class="fu">glance</span>(lm_model3),</span>
+<span id="cb51-4"><a href=""></a>  broom<span class="sc">::</span><span class="fu">glance</span>(lm_model4b)) <span class="sc">|&gt;</span></span>
+<span id="cb51-5"><a href=""></a>  <span class="fu">bind_cols</span>(<span class="fu">c</span>(<span class="st">"Model 1"</span>, <span class="st">"Model 2"</span>, <span class="st">"Model 3"</span>, <span class="st">"Model 4"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 4 × 13
   r.squared adj.r.squared sigma statistic   p.value    df  logLik    AIC    BIC
@@ -1026,7 +1027,7 @@ factor(Education)8th Grade        7.920635   6.075172   9.766097</code></pre>
 <li>You may recall from statistics classes that we can compare two nested linear regression models.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1"></a><span class="fu">anova</span>(lm_model4b, lm_model3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href=""></a><span class="fu">anova</span>(lm_model4b, lm_model3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Analysis of Variance Table
 
@@ -1057,9 +1058,11 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <li><p>Introduction to <code>broom</code> https://cran.r-project.org/web/packages/broom/vignettes/broom.html</p></li>
 <li><p><code>broom.mixed</code> documentation (useful if you are fitting random effects or mixed models) https://cran.r-project.org/web/packages/broom.mixed/vignettes/broom_mixed_intro.html</p></li>
 </ul>
+<div class="quarto-auto-generated-content">
+<p><img src="images/id529-sticker.png" class="slide-logo"></p>
+<div class="footer footer-default">
 
-<img src="images/id529-sticker.png" class="slide-logo r-stretch"><div class="footer footer-default">
-
+</div>
 </div>
 </section></section>
     </div>
@@ -1089,7 +1092,6 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
       Reveal.initialize({
 'controlsAuto': true,
 'previewLinksAuto': false,
-'smaller': false,
 'pdfSeparateFragments': false,
 'autoAnimateEasing': "ease",
 'autoAnimateDuration': 1,
@@ -1345,18 +1347,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
         }
         return false;
       }
-      const clipboard = new window.ClipboardJS('.code-copy-button', {
-        text: function(trigger) {
-          const codeEl = trigger.previousElementSibling.cloneNode(true);
-          for (const childEl of codeEl.children) {
-            if (isCodeAnnotation(childEl)) {
-              childEl.remove();
-            }
-          }
-          return codeEl.innerText;
-        }
-      });
-      clipboard.on('success', function(e) {
+      const onCopySuccess = function(e) {
         // button target
         const button = e.trigger;
         // don't keep focus
@@ -1388,11 +1379,50 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
         }, 1000);
         // clear code selection
         e.clearSelection();
+      }
+      const getTextToCopy = function(trigger) {
+          const codeEl = trigger.previousElementSibling.cloneNode(true);
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
+            }
+          }
+          return codeEl.innerText;
+      }
+      const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+        text: getTextToCopy
       });
-      function tippyHover(el, contentFn) {
+      clipboard.on('success', onCopySuccess);
+      if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+        // For code content inside modals, clipBoardJS needs to be initialized with a container option
+        // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+        const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+          text: getTextToCopy,
+          container: window.document.getElementById('quarto-embedded-source-code-modal')
+        });
+        clipboardModal.on('success', onCopySuccess);
+      }
+        var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+        var mailtoRegex = new RegExp(/^mailto:/);
+          var filterRegex = new RegExp('/' + window.location.host + '/');
+        var isInternal = (href) => {
+            return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+        }
+        // Inspect non-navigation links and adorn them if external
+     	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+        for (var i=0; i<links.length; i++) {
+          const link = links[i];
+          if (!isInternal(link.href)) {
+            // undo the damage that might have been done by quarto-nav.js in the case of
+            // links that we want to consider external
+            if (link.dataset.originalHref !== undefined) {
+              link.href = link.dataset.originalHref;
+            }
+          }
+        }
+      function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
         const config = {
           allowHTML: true,
-          content: contentFn,
           maxWidth: 500,
           delay: 100,
           arrow: false,
@@ -1402,8 +1432,17 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
           interactive: true,
           interactiveBorder: 10,
           theme: 'light-border',
-          placement: 'bottom-start'
+          placement: 'bottom-start',
         };
+        if (contentFn) {
+          config.content = contentFn;
+        }
+        if (onTriggerFn) {
+          config.onTrigger = onTriggerFn;
+        }
+        if (onUntriggerFn) {
+          config.onUntrigger = onUntriggerFn;
+        }
           config['offset'] = [0,0];
           config['maxWidth'] = 700;
         window.tippy(el, config); 
@@ -1417,7 +1456,11 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
           try { href = new URL(href).hash; } catch {}
           const id = href.replace(/^#\/?/, "");
           const note = window.document.getElementById(id);
-          return note.innerHTML;
+          if (note) {
+            return note.innerHTML;
+          } else {
+            return "";
+          }
         });
       }
       const findCites = (el) => {

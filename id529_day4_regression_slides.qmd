@@ -39,7 +39,7 @@ Jarvis Chen
 
 <br>
 
-Thursday, January 11, 2024
+Thursday, January 16, 2025
 
 
 ## Follow along {.smaller}
@@ -53,7 +53,7 @@ https://bit.ly/id529_regression_models
     
 - Clone the repository and open it as a `R` Project in your RStudio.
 
-- Open the `id529\_day4\_regression\_models.R` script. You can follow along, annotate, and/or run the code in your own R session.
+- Open the `id529_day4_regression_models.R` script. You can follow along, annotate, and/or run the code in your own R session.
 
 ##
 ![](images/modelbuilding_workflow.png)
